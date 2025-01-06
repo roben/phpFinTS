@@ -10,6 +10,7 @@ class GetStatementOfAccountTest extends ConsorsIntegrationTestBase
     public const GET_STATEMENT_REQUEST = "HKKAZ:3:7+DExxABCDEFGH1234567890:CSDBDE71XXX:1234567890::280:50220500+N+20190601+20190922'HKTAN:4:6+4+HKKAZ'";
 
     // Note: Consorsbank weirdly returns November statements even when only up to September was requested.
+    // Also, concors seems to use utf-8 and not iso8859-1 but still counts utf-8 chars as single bytes
     public const GET_STATEMENT_RESPONSE = "HIRMG:2:2:+3060::Teilweise liegen Warnungen/Hinweise vor.'HIRMS:3:2:3+0020::Der Auftrag wurde ausgefuhrt.+3076::Keine starke Authentifizierung erforderlich.+3997::Der Auftrag wurde nur teilweise ausgefuhrt.'"
     . "HIKAZ:4:7:3+@1034@\r\n"
     . ":20:0\r\n:21:NONREF\r\n:25:50220500/123456789\r\n:28C:0/7\r\n:60M:C191118EUR950,59\r\n"
