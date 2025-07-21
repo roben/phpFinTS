@@ -79,6 +79,11 @@ xx.foo.ag/?24Leistungszeitraum. 2025/7?30MALADE00STD?31DE23000000
 xx.foo.ag/?24Leistungszeitraum. 2025/7xx?25xxxxxxxxxxxxxxxxxxxxx?
 26das hier darf nicht fehlen?30MALADE00STD?31DE230000000000000000
 00?32FOO AG
+:86:201?00AUSLANDSGESCHAEFT?107018?20Ref..      1231231231231231?
+21Betrag USD            32,00?22Kurs   EUR/USD     1,164500?23EUR
+-Ggw.              79,60?24Entgeltinformationen finden?25Sie auf 
+der sep. Rechnung.?12312311 / AB12312312312?3057050120?3190004840
+07?321/xxxxxxxx xxxxxxxxxxxxxx E?33LECTRONI1/CSCO., LTD?34888
 EOF;
         // only "\r\n" are permitted in SEPA xml
         $descriptions = explode(':86:', str_replace("\n", "\r\n", $raw));
@@ -89,6 +94,14 @@ EOF;
         $this->assertEquals('R2500113 Software Proals Cloudanwendung. Mandant. https.//exampl.software.de/ Leistungszeitraum. 2025/7', $this->mt940->parseDescription($descriptions[2])['description']['SVWZ']);
         $this->assertEquals('R2500111 Software Proals Cloudanwendung. Mandant. https.//xxxxxxxx.foo.ag/Leistungszeitraum. 2025/7', $this->mt940->parseDescription($descriptions[3])['description']['SVWZ']);
         $this->assertEquals('R2500111 Software Proals Cloudanwendung. Mandant. https.//xxxxxxxx.foo.ag/Leistungszeitraum. 2025/7xxxxxxxxxxxxxxxxxxxxxxxdas hier darf nicht fehlen', $this->mt940->parseDescription($descriptions[4])['description']['SVWZ']);
+        $this->assertEquals(<<<EOF
+Ref..      1231231231231231
+Betrag USD            32,00
+Kurs   EUR/USD     1,164500
+EUR-Ggw.              79,60
+Entgeltinformationen finden
+Sie auf der sep. Rechnung.
+EOF, $this->mt940->parseDescription($descriptions[5])['description']['SVWZ']);
 
         // Extracted and modified from consors integration test
         // consors starts chunking after :86:, sparkasse includes :86:
