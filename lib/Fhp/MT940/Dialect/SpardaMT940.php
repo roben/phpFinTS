@@ -23,7 +23,11 @@ class SpardaMT940 extends MT940
             }
         }
         if (!$structuredStartFound) {
-            return ['SVWZ' => implode("\n", $otherInfo)];
+             return array(
+                'SVWZ' =>          implode("\n", $otherInfo),
+                'description_1' => '',
+                'description_2' => '',
+            );
         }
 
         // Beispiel

@@ -11,16 +11,10 @@ class PostbankMT940 extends MT940
     /** {@inheritdoc} */
     public function extractStructuredDataFromRemittanceLines($descriptionLines, string &$gvc, array &$rawLines, array $transaction): array
     {
-        $structuredStartFound = count($descriptionLines) > 0 && preg_match('/^[A-Z]{4}\+/', array_values($descriptionLines)[0]) === 1;
-
         $result = parent::extractStructuredDataFromRemittanceLines($descriptionLines, $gvc, $rawLines, $transaction);
-        if ($structuredStartFound) {
+        if (count($descriptionLines) === 0 || $this->isStructuredDescription($descriptionLines)) {
+            // structured case / no description is fine
             return $result;
-        }
-
-        // z.B bei Zinsen o.ä. ist alles leer
-        if (!isset($descriptionLines[0])) {
-            return [];
         }
 
         // Bie Auslandsüberweisungen (=210)

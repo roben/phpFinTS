@@ -169,10 +169,12 @@ class MT940
         // only allowed chunk terminators are \r\n (not @@)
         $currentIndex = $startIndex;
         while ($currentIndex < mb_strlen($content)) {
-            if (mb_substr($content, $currentIndex, 2) !== "\r\n") {
+            $chars = mb_substr($content, $currentIndex, 2);
+            /// @@ is not according to specs, but the banks don't care...
+            if ($chars !== "\r\n" && $chars !== '@@') {
                 return false; // not chunked
             }
-            $currentIndex += 67; // 65 bytes + \r\n
+            $currentIndex += 67; // 65 bytes + \r\n / @@
         }
         return true;
     }
@@ -205,14 +207,11 @@ class MT940
         for ($currentIndex = 0; $currentIndex < mb_strlen($descr); $currentIndex++) {
             $currentChunkLength++;
             if ($currentIndex < $offset) continue; // skip offset for :86:
-            $c = mb_substr($descr, $currentIndex, 1);
             if ($currentChunkLength <= 65) {
-                $result .= $c;
-            } else {
-                // end of chunk reached, skip chars (\r\n) until \n is reached:
-                if ($c === "\n") {
-                    $currentChunkLength = 0;
-                }
+                $result .= mb_substr($descr, $currentIndex, 1);;
+            } if ($currentChunkLength === 67) {
+                // end of chunk reached, off to the next chunk
+                $currentChunkLength = 0;
             }
         }
         return trim($result); // trim removes remaining line breaks
@@ -281,6 +280,11 @@ class MT940
         return $result;
     }
 
+    protected function isStructuredDescription(array $descriptionLines): bool {
+        if (count($descriptionLines) === 0) return false;
+        return preg_match('/^[A-Z]{4}\+/', array_values($descriptionLines)[0]) === 1;
+    }
+
     /**
      *
      * The naming of this method is not entirely correct, as it also handles the case of unstructured purpose codes.
@@ -316,8 +320,7 @@ class MT940
             }
         }
 
-        $first = array_values($descriptionLines)[0];
-        if (strlen($first) < 5 || $first[4] !== '+') {
+        if (!$this->isStructuredDescription($descriptionLines)) {
             // No SEPA identifier ("ABCD+") in the first line.
             // If there is no SEPA identifier in the first line, no more can come, according to spec.
             // Some bank still do, but they get a deviating MT940 prozessor, see SpardaMT940.php for example.
