@@ -143,7 +143,7 @@ class DialogInitialization extends BaseAction
             $this->hktanRef,
             $this->kundensystemId,
             $this->messageNumber,
-            $this->dialogId
+            $this->dialogId,
         ) = $serialized;
 
         is_array($parentSerialized) ?
@@ -151,7 +151,6 @@ class DialogInitialization extends BaseAction
             parent::unserialize($parentSerialized);
     }
 
-    /** {@inheritdoc} */
     protected function createRequest(BPD $bpd, ?UPD $upd)
     {
         throw new \AssertionError('DialogInitialization::createRequest should not be used.');

@@ -24,7 +24,7 @@ use Fhp\UnsupportedException;
  */
 class GetDepotAufstellung extends PaginateableAction
 {
-    // Request (not available after serialization, i.e. not available in processResponse()).
+    // Request (if you add a field here, update __serialize() and __unserialize() as well).
     /** @var SEPAAccount */
     private $account;
 
@@ -81,7 +81,7 @@ class GetDepotAufstellung extends PaginateableAction
     {
         list(
             $parentSerialized,
-            $this->account
+            $this->account,
         ) = $serialized;
 
         is_array($parentSerialized) ?
@@ -111,7 +111,6 @@ class GetDepotAufstellung extends PaginateableAction
         return $this->depotWert;
     }
 
-    /** {@inheritdoc} */
     protected function createRequest(BPD $bpd, ?UPD $upd)
     {
         /** @var HIWPDS $hiwpds */
@@ -125,7 +124,6 @@ class GetDepotAufstellung extends PaginateableAction
         }
     }
 
-    /** {@inheritdoc} */
     public function processResponse(Message $response)
     {
         parent::processResponse($response);

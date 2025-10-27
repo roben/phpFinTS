@@ -77,7 +77,17 @@ abstract class Rueckmeldungscode
      * Tells the client that the response is incomplete and the request needs to be re-sent with the pagination token
      * ("Aufsetzpunkt") that is contained in the Rueckmeldung parameters.
      */
-    public const PAGINATION = 3040;
+    public const AUFSETZPUNKT = 3040;
+
+    public const VOP_KEINE_NAMENSABWEICHUNG = 25;
+
+    public const VOP_ERGEBNIS_NAMENSABGLEICH_PRUEFEN = 3090;
+
+    public const VOP_AUSFUEHRUNGSAUFTRAG_NICHT_BENOETIGT = 3091;
+
+    public const VOP_NAMENSABGLEICH_IST_NOCH_IN_BEARBEITUNG = 3093;
+
+    public const VOP_NAMENSABGLEICH_IST_KOMPLETT = 3094;
 
     /**
      * Zugelassene Ein- und Zwei-Schritt-Verfahren für den Benutzer (+ Rückmeldungsparameter).
@@ -98,6 +108,14 @@ abstract class Rueckmeldungscode
      * Note that this library does not support HKPSA.
      */
     public const ZUGANG_VORLAEUFIG_GESPERRT = 3938;
+
+    /**
+     * Der eingereichte HKTAN ist entwertet und der Auftrag (nach
+     * vollständiger Übermittlung des Prüfergebnisses) soll erneut mit einem neuen
+     * HKTAN in Verbindung mit einem HKVPA eingereicht werden, sofern der
+     * Kunde die Ausführung weiterhin wünscht.
+     */
+    public const FREIGABE_KANN_NICHT_ERTEILT_WERDEN = 3945;
 
     /**
      * Starke Kundenauthentifizierung noch ausstehend.

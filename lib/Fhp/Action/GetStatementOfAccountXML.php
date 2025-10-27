@@ -24,7 +24,7 @@ use Fhp\UnsupportedException;
  */
 class GetStatementOfAccountXML extends PaginateableAction
 {
-    // Request (not available after serialization, i.e. not available in processResponse()).
+    // Request (if you add a field here, update __serialize() and __unserialize() as well).
     /** @var SEPAAccount */
     private $account;
     /** @var \DateTime */
@@ -98,7 +98,7 @@ class GetStatementOfAccountXML extends PaginateableAction
     {
         list(
             $parentSerialized,
-            $this->account, $this->camtURN, $this->from, $this->to, $this->allAccounts
+            $this->account, $this->camtURN, $this->from, $this->to, $this->allAccounts,
         ) = $serialized;
 
         is_array($parentSerialized) ?
@@ -115,7 +115,6 @@ class GetStatementOfAccountXML extends PaginateableAction
         return $this->xml;
     }
 
-    /** {@inheritdoc} */
     protected function createRequest(BPD $bpd, ?UPD $upd)
     {
         if ($upd === null) {
@@ -149,7 +148,6 @@ class GetStatementOfAccountXML extends PaginateableAction
         }
     }
 
-    /** {@inheritdoc} */
     public function processResponse(Message $response)
     {
         parent::processResponse($response);

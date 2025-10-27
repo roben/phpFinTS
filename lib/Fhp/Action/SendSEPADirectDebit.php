@@ -22,26 +22,23 @@ use Fhp\UnsupportedException;
  */
 class SendSEPADirectDebit extends BaseAction
 {
+    // Request (if you add a field here, update __serialize() and __unserialize() as well).
     /** @var SEPAAccount */
     protected $account;
-
     /** @var string */
     protected $painMessage;
-
     /** @var string */
     protected $painNamespace;
-
     /** @var float */
     protected $ctrlSum;
-
     /** @var bool */
     protected $singleDirectDebit = false;
-
     /** @var bool */
     protected $tryToUseControlSumForSingleTransactions = false;
-
     /** @var string */
     private $coreType;
+
+    // There are no result fields. This action is simply marked as done to indicate that the transfer was executed.
 
     public static function create(SEPAAccount $account, string $painMessage, bool $tryToUseControlSumForSingleTransactions = false): SendSEPADirectDebit
     {
@@ -55,11 +52,11 @@ class SendSEPADirectDebit extends BaseAction
         $nbOfTxs = substr_count($painMessage, '<DrctDbtTxInf>');
         $ctrlSum = null;
 
-        if (preg_match('@<GrpHdr>.*<CtrlSum>(?<ctrlsum>[.0-9]+)</CtrlSum>.*</GrpHdr>@s', $painMessage, $matches) === 1) {
+        if (preg_match('@<GrpHdr>.*?<CtrlSum>(?<ctrlsum>[0-9.]+)</CtrlSum>.*?</GrpHdr>@s', $painMessage, $matches) === 1) {
             $ctrlSum = $matches['ctrlsum'];
         }
 
-        if (preg_match('@<PmtTpInf>.*<LclInstrm>.*<Cd>(?<coretype>CORE|COR1|B2B)</Cd>.*</LclInstrm>.*</PmtTpInf>@s', $painMessage, $matches) === 1) {
+        if (preg_match('@<PmtTpInf>.*?<LclInstrm>.*?<Cd>(?<coretype>CORE|COR1|B2B)</Cd>.*?</LclInstrm>.*?</PmtTpInf>@s', $painMessage, $matches) === 1) {
             $coreType = $matches['coretype'];
         } else {
             throw new \InvalidArgumentException('The type CORE/COR1/B2B is missing in PAIN message');
@@ -114,7 +111,7 @@ class SendSEPADirectDebit extends BaseAction
     {
         list(
             $parentSerialized,
-            $this->singleDirectDebit, $this->tryToUseControlSumForSingleTransactions, $this->ctrlSum, $this->coreType, $this->painMessage, $this->painNamespace, $this->account
+            $this->singleDirectDebit, $this->tryToUseControlSumForSingleTransactions, $this->ctrlSum, $this->coreType, $this->painMessage, $this->painNamespace, $this->account,
         ) = $serialized;
 
         is_array($parentSerialized) ?
@@ -138,17 +135,26 @@ class SendSEPADirectDebit extends BaseAction
 
         if ($hidxes->getVersion() === 2) {
             /** @var HIDMESv2|HIDSESv2 $hidxes */
-            $supportedPainNamespaces = $hidxes->getParameter()->unterstuetzteSEPADatenformate;
+            $supportedPainNamespaces = $hidxes->getParameter()->getUnterstuetzteSEPADatenformate();
         }
 
         // If there are no SEPA formats available in the HIDXES Parameters, we look to the general formats
         if (!is_array($supportedPainNamespaces) || count($supportedPainNamespaces) === 0) {
             /** @var HISPAS $hispas */
             $hispas = $bpd->requireLatestSupportedParameters('HISPAS');
-            $supportedPainNamespaces = $hispas->getParameter()->getUnterstuetzteSepaDatenformate();
+            $supportedPainNamespaces = $hispas->getParameter()->getUnterstuetzteSEPADatenformate();
         }
 
-        if (!in_array($this->painNamespace, $supportedPainNamespaces)) {
+        // Sometimes the Bank reports supported schemas with a "_GBIC_X" postfix.
+        // GIBC_X stands for German Banking Industry Committee and a version counter.
+        $xmlSchema = $this->painNamespace;
+        $matchingSchemas = array_filter($supportedPainNamespaces, function ($value) use ($xmlSchema) {
+            // For example urn:iso:std:iso:20022:tech:xsd:pain.008.001.08 from the xml matches
+            // urn:iso:std:iso:20022:tech:xsd:pain.008.001.08_GBIC_4
+            return str_starts_with($value, $xmlSchema);
+        });
+
+        if (count($matchingSchemas) === 0) {
             throw new UnsupportedException("The bank does not support the XML schema $this->painNamespace, but only "
                 . implode(', ', $supportedPainNamespaces));
         }

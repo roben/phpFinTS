@@ -13,32 +13,27 @@ use Fhp\Protocol\ServerException;
  */
 class FinTsPeer extends FinTs
 {
-    /**
-     * @var Connection
-     */
-    public static $mockConnection;
+    public static ?Connection $mockConnection = null;
 
     public function __construct(FinTsOptions $options, ?Credentials $credentials)
     {
         parent::__construct($options, $credentials);
     }
 
-    /** {@inheritdoc} */
     protected function newConnection(): Connection
     {
         return self::$mockConnection;
     }
 
     /**
-     * {@inheritdoc}
      * @throws ServerException
      */
-    public function endDialog(bool $isAnonymous = false) // parent::endDialog() is protected
+    public function endDialog(bool $isAnonymous = false): void // parent::endDialog() is protected
     {
         parent::endDialog($isAnonymous);
     }
 
-    public function getDialogId()
+    public function getDialogId(): ?string
     {
         return $this->dialogId;
     }

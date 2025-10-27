@@ -23,14 +23,16 @@ use Fhp\UnsupportedException;
  */
 class SendSEPARealtimeTransfer extends BaseAction
 {
+    // Request (if you add a field here, update __serialize() and __unserialize() as well).
     /** @var SEPAAccount */
     private $account;
     /** @var string */
     private $painMessage;
     /** @var string */
     private $xmlSchema;
-
     private bool $allowConversionToSEPATransfer = true;
+
+    // There are no result fields. This action is simply marked as done to indicate that the transfer was executed.
 
     /**
      * @param SEPAAccount $account The account from which the transfer will be sent.
@@ -52,16 +54,69 @@ class SendSEPARealtimeTransfer extends BaseAction
         return $result;
     }
 
-    /** {@inheritdoc} */
+    /**
+     * @deprecated Beginning from PHP7.4 __unserialize is used for new generated strings, then this method is only used for previously generated strings - remove after May 2023
+     */
+    public function serialize(): string
+    {
+        return serialize($this->__serialize());
+    }
+
+    public function __serialize(): array
+    {
+        return [
+            parent::__serialize(),
+            $this->account, $this->painMessage, $this->xmlSchema, $this->allowConversionToSEPATransfer,
+        ];
+    }
+
+    /**
+     * @deprecated Beginning from PHP7.4 __unserialize is used for new generated strings, then this method is only used for previously generated strings - remove after May 2023
+     *
+     * @param string $serialized
+     * @return void
+     */
+    public function unserialize($serialized)
+    {
+        self::__unserialize(unserialize($serialized));
+    }
+
+    public function __unserialize(array $serialized): void
+    {
+        list(
+            $parentSerialized,
+            $this->account, $this->painMessage, $this->xmlSchema, $this->allowConversionToSEPATransfer,
+        ) = $serialized;
+
+        is_array($parentSerialized) ?
+            parent::__unserialize($parentSerialized) :
+            parent::unserialize($parentSerialized);
+    }
+
     protected function createRequest(BPD $bpd, ?UPD $upd)
     {
         /** @var HIIPZSv1|HIIPZSv2 $hiipzs */
         $hiipzs = $bpd->requireLatestSupportedParameters('HIIPZS');
 
-        /** @var HISPAS $hispas */
-        $hispas = $bpd->requireLatestSupportedParameters('HISPAS');
-        $supportedSchemas = $hispas->getParameter()->getUnterstuetzteSepaDatenformate();
-        if (!in_array($this->xmlSchema, $supportedSchemas)) {
+        $supportedSchemas = $hiipzs->parameter->getUnterstuetzteSEPADatenformate();
+
+        // If there are no SEPA formats available in the HIIPZS Parameters, we look to the general formats
+        if (is_null($supportedSchemas)) {
+            /** @var HISPAS $hispas */
+            $hispas = $bpd->requireLatestSupportedParameters('HISPAS');
+            $supportedSchemas = $hispas->getParameter()->getUnterstuetzteSEPADatenformate();
+        }
+
+        // Sometimes the Bank reports supported schemas with a "_GBIC_X" postfix.
+        // GIBC_X stands for German Banking Industry Committee and a version counter.
+        $xmlSchema = $this->xmlSchema;
+        $matchingSchemas = array_filter($supportedSchemas, function ($value) use ($xmlSchema) {
+            // For example urn:iso:std:iso:20022:tech:xsd:pain.001.001.09 from the xml matches
+            // urn:iso:std:iso:20022:tech:xsd:pain.001.001.09_GBIC_4
+            return str_starts_with($value, $xmlSchema);
+        });
+
+        if (count($matchingSchemas) === 0) {
             throw new UnsupportedException("The bank does not support the XML schema $this->xmlSchema, but only "
                 . implode(', ', $supportedSchemas));
         }
@@ -77,7 +132,6 @@ class SendSEPARealtimeTransfer extends BaseAction
         return $hkipz;
     }
 
-    /** {@inheritdoc} */
     public function processResponse(Message $response)
     {
         parent::processResponse($response);
@@ -91,8 +145,8 @@ class SendSEPARealtimeTransfer extends BaseAction
             return;
         }
 
-        if ($response->findRueckmeldung(Rueckmeldungscode::ENTGEGENGENOMMEN) === null &&
-            $response->findRueckmeldung(Rueckmeldungscode::AUSGEFUEHRT) === null) {
+        if ($response->findRueckmeldung(Rueckmeldungscode::ENTGEGENGENOMMEN) === null
+            && $response->findRueckmeldung(Rueckmeldungscode::AUSGEFUEHRT) === null) {
             throw new UnexpectedResponseException('Bank did not confirm SEPATransfer execution');
         }
     }

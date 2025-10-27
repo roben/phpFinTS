@@ -24,7 +24,7 @@ use Fhp\UnsupportedException;
  */
 class GetBalance extends PaginateableAction
 {
-    // Request (not available after serialization, i.e. not available in processResponse()).
+    // Request (if you add a field here, update __serialize() and __unserialize() as well).
     /** @var SEPAAccount */
     private $account;
     /** @var bool */
@@ -79,7 +79,7 @@ class GetBalance extends PaginateableAction
     {
         list(
             $parentSerialized,
-            $this->account, $this->allAccounts
+            $this->account, $this->allAccounts,
         ) = $serialized;
 
         is_array($parentSerialized) ?
@@ -96,7 +96,6 @@ class GetBalance extends PaginateableAction
         return $this->response;
     }
 
-    /** {@inheritdoc} */
     protected function createRequest(BPD $bpd, ?UPD $upd)
     {
         /** @var BaseSegment $hisals */
@@ -115,7 +114,6 @@ class GetBalance extends PaginateableAction
         }
     }
 
-    /** {@inheritdoc} */
     public function processResponse(Message $response)
     {
         parent::processResponse($response);
